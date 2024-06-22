@@ -1,5 +1,6 @@
 mod aoc1;
 mod aoc2;
+mod aoc3;
 mod aoc_traits;
 
 use crate::aoc1::Aoc1;
