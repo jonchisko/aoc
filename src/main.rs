@@ -5,6 +5,7 @@ mod aoc_traits;
 
 use crate::aoc1::Aoc1;
 use crate::aoc2::Aoc2;
+use crate::aoc3::Aoc3;
 use crate::aoc_traits::SolveAdvent;
 
 fn main() {
@@ -15,4 +16,8 @@ fn main() {
     let aoc2 = Aoc2::new();
     aoc2.solve1();
     aoc2.solve2();
+
+    let aoc3 = Aoc3::new();
+    aoc3.solve1();
+    aoc3.solve2();
 }

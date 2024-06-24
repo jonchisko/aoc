@@ -2,7 +2,11 @@ use std::{collections::HashSet, fs, num::ParseIntError};
 
 use crate::aoc_traits::{Solution, SolveAdvent};
 
-struct Aoc3 {
+fn read_input(aoc: &Aoc3) -> String {
+    fs::read_to_string(format!("inputs/{}.txt", aoc.name)).expect("Could not read input file.")
+}
+
+pub struct Aoc3 {
     name: String,
 }
 
@@ -16,7 +20,11 @@ impl Aoc3 {
 
 impl SolveAdvent for Aoc3 {
     fn compute_solution1(&self) -> Solution {
-        todo!();
+        let input = read_input(self);
+        let schematic =
+            Schematic::try_from(&input[..]).expect("Could not create Schematic from string");
+
+        Solution::new(&self.name, schematic.part_number_sum().to_string())
     }
 
     fn compute_solution2(&self) -> Solution {
@@ -24,9 +32,10 @@ impl SolveAdvent for Aoc3 {
     }
 }
 
-#[derive(Hash, PartialEq, PartialOrd, Ord, Eq, Clone, Copy)]
+#[derive(Hash, PartialEq, PartialOrd, Ord, Eq, Clone, Copy, Debug)]
 struct Point(i32, i32);
 
+#[derive(Debug)]
 struct Number(i32, Vec<Point>); // memory footprint might be made smaller, by using some smart pointer to a slice.
                                 // ... since it will mostly be read and not written to, after the construction
 
@@ -44,7 +53,7 @@ impl Schematic {
     }
 
     pub fn add_symbol(&mut self, point: Point) {
-        if self.symbols.insert(point) {
+        if !self.symbols.insert(point) {
             panic!("Point was already contained");
         }
     }
@@ -52,8 +61,42 @@ impl Schematic {
     pub fn add_number(&mut self, number: Number) {
         self.numbers.push(number);
     }
+
+    pub fn part_number_sum(&self) -> i32 {
+        let mut sum: i32 = 0;
+
+        for number in &self.numbers {
+            if !self.is_part(&number) {
+                continue;
+            }
+            sum += number.0;
+        }
+
+        sum
+    }
+
+    fn is_part(&self, part_number: &Number) -> bool {
+        for location in &part_number.1 {
+            // nice nesting depth, if i'd concern myself with clean code at this place, I'd rework this.
+            for i in -1..=1 {
+                for j in -1..=1 {
+                    if i == 0 && j == 0 {
+                        continue;
+                    }
+
+                    let point_query = Point(location.0 + i, location.1 + j);
+                    if self.symbols.contains(&point_query) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 }
 
+#[derive(Debug)]
 enum SchematicError {
     MalformedString,
     IntConversion(ParseIntError),
@@ -99,5 +142,50 @@ impl TryFrom<&str> for Schematic {
         }
 
         Ok(schematic)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn schematic_construction() {
+        // Arrange
+        let input = "467..114..
+                    ...*......
+                    ..35..633.
+                    ......#...
+                    617*......
+                    .....+.58.
+                    ..592.....
+                    ......755.
+                    ...$.*....
+                    .664.598..";
+
+        // Act
+        let schematic = Schematic::try_from(input).unwrap();
+
+        // Assert
+        assert_eq!(
+            schematic.numbers.len(),
+            10,
+            "There should be 10 numbers in the schematic."
+        );
+        assert_eq!(
+            schematic.symbols.len(),
+            6,
+            "There should be 6 symbols in the schematic."
+        );
+        assert_eq!(
+            schematic.numbers[0].1,
+            vec![Point(0, 0), Point(1, 0), Point(2, 0)],
+            "Coordinates are not correct"
+        );
+        assert_eq!(
+            schematic.part_number_sum(),
+            4361,
+            "Part numbers should sum to 4361."
+        );
     }
 }
